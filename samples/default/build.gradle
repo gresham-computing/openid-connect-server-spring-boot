@@ -1,33 +1,53 @@
 buildscript {
-	ext {
-		springBootVersion = "1.5.2.RELEASE"
-	}
-	repositories {
-		mavenCentral()
-	}
-	dependencies {
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-	}
+  ext {
+    springBootVersion = "1.5.2.RELEASE"
+  }
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    classpath "se.transmode.gradle:gradle-docker:1.2" // xi
+  }
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'docker' // xi
 
-eclipse.project.name = 'openid-connect-server-spring-boot-samples-default' 
+eclipse.project.name = 'openid-connect-server-spring-boot-samples-default'
 
 repositories {
-	mavenCentral()
+  mavenCentral()
 }
 
 dependencies {
-	compile('org.springframework.boot:spring-boot-starter')
-	 
-	compile ('net.simpledynamics:openid-connect-server-spring-boot-config:0.1.4-SNAPSHOT')
-	compile ('net.simpledynamics:openid-connect-server-spring-boot-ui-thymeleaf:0.1.4-SNAPSHOT')
-	compile ('org.mitre:openid-connect-server:1.3.0')
+  compile('org.springframework.boot:spring-boot-starter')
 
-    runtime ('com.h2database:h2:1.4.192')
+  compile ('net.simpledynamics:openid-connect-server-spring-boot-config:0.1.4-SNAPSHOT')
+  compile ('net.simpledynamics:openid-connect-server-spring-boot-ui-thymeleaf:0.1.4-SNAPSHOT')
+  compile ('org.mitre:openid-connect-server:1.3.0')
+
+  runtime ('com.h2database:h2:1.4.192')
 }
 
 uploadArchives.enabled = false
+
+
+
+// xi
+
+task buildDocker(type: Docker) {
+  baseImage = 'develar/java:latest'
+    push = project.hasProperty('push')
+    tag = 'gresham/mitreid'
+    addFile {
+      from jar
+        rename {'app.jar'}
+    }
+  entryPoint(['java', '-jar', '/app.jar'])
+    exposePort(8080)
+}
+
+buildDocker.dependsOn(build)
